@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VÃ©rtice MAP â Pesquisa de Interesse</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #1D304E;
+      --navy-light: #253d62;
+      --teal:       #1EA9A1;
+      --teal-light: #e6f7f6;
+      --teal-mid:   #b2e6e3;
+      --white:      #ffffff;
+      --bg:         #f4f6f9;
+      --border:     #dde3ec;
+      --text:       #1a2740;
+      --muted:      #6b7a99;
+      --radius:     10px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ââ HEADER ââ */
+    .header {
+      background: var(--navy);
+      padding: 28px 20px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: rgba(30,169,161,.15);
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -30px; left: 10%;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: rgba(30,169,161,.1);
+    }
+    .logo {
+      color: var(--teal);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .header-title {
+      color: var(--white);
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.4;
+      max-width: 520px;
+      margin: 0 auto 8px;
+      position: relative;
+    }
+    .header-sub {
+      color: rgba(255,255,255,.6);
+      font-size: 13px;
+      position: relative;
+    }
+
+    /* ââ PROGRESS ââ */
+    .progress-bar-wrap {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .progress-track {
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), #25cfc6);
+      border-radius: 3px;
+      transition: width .4s ease;
+    }
+
+    /* ââ MAIN ââ */
+    main { max-width: 660px; margin: 0 auto; padding: 28px 16px 80px; }
+
+    /* ââ STEP ââ */
+    .step { display: none; animation: fadeIn .3s ease; }
+    .step.active { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+    .step-heading { margin-bottom: 24px; }
+    .step-tag {
+      display: inline-block;
+      background: var(--teal-light);
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .step-title { font-size: 22px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+    .step-desc  { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ââ QUESTION CARD ââ */
+    .q-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      margin-bottom: 14px;
+    }
+    .q-label {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--navy);
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+    .q-hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+
+    /* ââ OPTIONS (radio / checkbox) ââ */
+    .opts { display: flex; flex-direction: column; gap: 8px; }
+    .opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 11px 14px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color .18s, background .18s;
+      background: var(--bg);
+      user-select: none;
+    }
+    .opt:hover { border-color: var(--teal); background: var(--teal-light); }
+    .opt.selected { border-color: var(--teal); background: var(--teal-light); }
+    .opt input { width: 17px; height: 17px; accent-color: var(--teal); flex-shrink:0; margin-top:2px; cursor:pointer; }
+    .opt-text { font-size: 14px; color: #2d3a52; line-height: 1.45; }
+
+    /* ââ TEXT INPUT ââ */
+    input[type=text], textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color .2s, background .2s;
+      resize: vertical;
+    }
+    input[type=text]:focus, textarea:focus {
+      border-color: var(--teal);
+      background: var(--white);
+    }
+    textarea { min-height: 100px; }
+
+    /* ââ SCALE ââ */
+    .scale-btns { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 8px; }
+    .scale-btn {
+      width: 46px; height: 46px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      color: #4a5568;
+      transition: border-color .18s, background .18s, color .18s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .scale-btn:hover { border-color: var(--teal); background: var(--teal-light); }
+    .scale-btn.selected { border-color: var(--teal); background: var(--teal); color: var(--white); }
+    .scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+    /* ââ NAVIGATION ââ */
+    .nav { display: flex; gap: 12px; margin-top: 28px; }
+    .btn {
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--teal); color: var(--white); flex: 1; }
+    .btn-primary:hover { background: #179e97; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(30,169,161,.3); }
+    .btn-back {
+      background: transparent;
+      color: var(--navy);
+      border: 2px solid var(--border);
+      padding: 14px 20px;
+    }
+    .btn-back:hover { border-color: var(--navy); }
+
+    /* ââ SUCCESS ââ */
+    #success {
+      display: none;
+      text-align: center;
+      padding: 60px 24px;
+    }
+    .success-circle {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: var(--teal-light);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 36px;
+    }
+    #success h2 { font-size: 26px; color: var(--navy); margin-bottom: 12px; }
+    #success p  { font-size: 15px; color: var(--muted); line-height: 1.7; max-width: 400px; margin: 0 auto; }
+    .success-badge {
+      display: inline-block;
+      margin-top: 28px;
+      background: var(--navy);
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 8px 20px;
+      border-radius: 30px;
+    }
+
+    /* ââ OUTRO (campo "Outro") ââ */
+    .outro-wrap {
+      display: none;
+      margin-top: 6px;
+      padding: 0 14px 4px;
+    }
+    .outro-wrap.visible { display: block; }
+    .outro-input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 2px solid var(--teal);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--white);
+      outline: none;
+    }
+    .outro-input::placeholder { color: var(--muted); }
+
+    /* ââ FOOTER ââ */
+    footer { text-align: center; padding: 20px; font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">VÃ©rtice MAP</div>
+  <h1 class="header-title">O Futuro dos Profissionais de Marketing e ComunicaÃ§Ã£o na Era da IA</h1>
+  <p class="header-sub">Responda em 5 minutos e ajude a moldar o prÃ³ximo programa</p>
+</header>
+
+<div class="progress-bar-wrap" id="progressWrap">
+  <div class="progress-meta">
+    <span id="stepLabel">Etapa 1 de 3 â Perfil profissional</span>
+    <span id="stepPct">33%</span>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:33%"></div></div>
+</div>
+
+<main>
+
+  <!-- âââ STEP 1: PERFIL âââ -->
+  <div class="step active" id="step1">
+    <div class="step-heading">
+      <span class="step-tag">Etapa 1 Â· Perfil</span>
+      <h2 class="step-title">Seu perfil profissional</h2>
+      <p class="step-desc">Queremos entender sua trajetÃ³ria e realidade atual.</p>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">1. Qual sua funÃ§Ã£o atual?</div>
+      <div class="opts" id="q1"></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">2. Em qual Ã¡rea vocÃª atua atualmente?</div>
+      <div class="opts" id="q2"></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">3. Hoje, qual Ã© sua maior preocupaÃ§Ã£o profissional?</div>
+      <div class="opts" id="q3"></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">4. Quais das situaÃ§Ãµes abaixo representam sua realidade atual? <span class="q-hint">(selecione atÃ© 3)</span></div>
+      <div class="opts" id="q4"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn btn-primary" onclick="goStep(2)">Continuar &rarr;</button>
+    </div>
+  </div>
+
+  <!-- âââ STEP 2: CENÃRIO âââ -->
+  <div class="step" id="step2">
+    <div class="step-heading">
+      <span class="step-tag">Etapa 2 Â· CenÃ¡rio</span>
+      <h2 class="step-title">CenÃ¡rio e interesse no programa</h2>
+      <p class="step-desc">Nos conte sobre seus objetivos e o quanto valoriza o desenvolvimento profissional.</p>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">5. Se nada mudar nos prÃ³ximos 12 meses, qual serÃ¡ o impacto para sua carreira?</div>
+      <input type="text" id="q5" placeholder="Descreva brevemente...">
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">6. Qual dessas propostas mais desperta seu interesse?</div>
+      <div class="opts" id="q6"></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">7. Se existisse um programa que ajudasse vocÃª a usar IA na prÃ¡tica, aumentar sua produtividade, gerar mais resultados, comprovar seu valor ehacelerar sua carreira â quanto vocÃª consideraria investir?</div>
+      <div class="opts" id="q7"></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">8. Se o investimento fosse na faixa de R$ 6.000, como vocÃª imagina viabilizÃ¡-lo?</div>
+      <div class="opts" id="q8"></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">9. VocÃª teria interesse em participar de uma turma piloto, caso ela seja criada?</div>
+      <div class="opts" id="q9"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn btn-back" onclick="goStep(1)">&larr;</button>
+      <button class="btn btn-primary" onclick="goStep(3)">Continuar &rarr;</button>
+    </div>
+  </div>
+
+  <!-- âââ STEP 3: CONTATO + IA âââ -->
+  <div class="step" id="step3">
+    <div class="step-heading">
+      <span class="step-tag">Etapa 3 Â· Contato &amp; IA</span>
+      <h2 class="step-title">Contato e conhecimento em IA</h2>
+      <p class="step-desc">Ãltimas perguntas â quase lÃ¡! Fique Ã  vontade para deixar seu contato se quiser receber novidades.</p>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">10. Nome completo <span class="q-hint">(opcional â para receber informaÃ§Ãµes sobre a turma piloto)</span></div>
+      <input type="text" id="q10" placeholder="Seu nome completo">
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">WhatsApp para contato <span class="q-hint">(opcional)</span></div>
+      <input type="text" id="q11whats" placeholder="(00) 00000-0000">
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">11. Como vocÃª avalia seu conhecimento atual sobre InteligÃªncia Artificial? <span class="q-hint">(0 = nenhum &nbsp;|&nbsp; 10 = avanÃ§ado)</span></div>
+      <div class="scale-btns" id="q11scale"></div>
+      <div class="scale-labels"><span>Nenhum</span><span>BÃ¡sico</span><span>IntermediÃ¡rio</span><span>AvanÃ§ado</span></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">12. O que vocÃª mais gostaria de aprender? <span class="q-hint">(escolha atÃ© 3)</span></div>
+      <div class="opts" id="q12"></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">13. Existe algo que vocÃ  gostaria de aprender ou desenvolver que nÃ£o foi abordado nesta pesquisa?</div>
+      <textarea id="q13" placeholder="Compartilhe suas ideias..."></textarea>
+    </div>
+
+    <div class="nav">
+      <button class="btn btn-back" onclick="goStep(2)">&larr;</button>
+      <button class="btn btn-primary" onclick="submitForm()">Enviar pesquisa â</button>
+    </div>
+  </div>
+
+  <!-- âââ SUCCESS âââ -->
+  <div id="success">
+    <div class="success-circle">â</div>
+    <h2>Obrigado pela sua resposta!</h2>
+    <p>Suas respostas foram registradas com sucesso. Em breve entraremos em contato com mais informaÃ§Ãµes sobre o programa.</p>
+    <span class="success-badge">VÃRTICE MAP</span>
+  </div>
+
+</main>
+
+<footer>VÃ©rtice MAP â Programa de Desenvolvimento Profissional &nbsp;Â·&nbsp; RAISE</footer>
+
+<!-- Hidden iframe para submissÃ£o sem CORS -->
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="onIframeLoad()"></iframe>
+
+<script>
+/* âââââââââââââââââââââââââââââââââââââââââ
+   CONFIGURAÃÃO DO FORMULÃRIO
+   âââââââââââââââââââââââââââââââââââââââââ */
+const FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSd41dHHoQnncq9k809n9v7WO7_P-Lp3pmIQ0XqvLvHgmyrI-Q/formResponse';
+
+const FIELDS = {
+  q1:      { entry: '845061479',  type: 'radio',    hasOther: true, opts: ['Analista','Coordenador','Gerente','Head','Diretor','Consultor'] },
+  q2:      { entry: '1041239608', type: 'radio',    hasOther: true, opts: ['Marketing','ComunicaÃ§Ã£o','Marketing Digital','Growth','Comercial','AgÃªncia','Assessoria de ComunicaÃ§Ã£o','Endomarketing'] },
+  q3:      { entry: '1625959461', type: 'radio',    hasOther: true, opts: ['EstagnaÃ§Ã£o salarial','Falta de crescimento na carreira','Dificuldade em conseguir novas oportunidades','Falta de atualizaÃ§Ã£o profissional','Medo de ficar para trÃ¡s com a IA','Dificuldade em demonstrar resultados','Baixa produtividade'] },
+  q4:      { entry: '499116240',  type: 'checkbox', hasOther: true, max: 3, opts: ['Sinto que estou estagnado profissionalmente','Tenho receio de ficar para trÃ¡s com as mudanÃ§as provocadas pela IA','Preciso me tornar mais estratÃ©gico e menos operacional','Quero conquistar cargos de lideranÃ§a','Quero aumentar minha renda ou salÃ¡rio','Tenho dificuldade em demonstrar o valor do meu trabalho atravÃ©s de resultados','Sinto que preciso me atualizar para continuar competitivo no mercado','Estou buscando novas oportunidades de carreira'] },
+  q5:      { entry: '1499212288', type: 'text' },
+  q6:      { entry: '933712324',  type: 'radio',    opts: ['IA aplicada ao Marketing','Marketing de Alta Performance com IA','Profissional Exponencial: destaque-se na era da IA','AceleraÃ§Ã£o de Carreira para Profissionais de Marketing e ComunicaÃ§Ã£o','Growth e IA para Profissionais de Marketing','Como se tornar um profissional estratÃ©gico na era da IA'] },
+  q7:      { entry: '343762714',  type: 'radio',    opts: ['AtÃ© R$ 1.000','De R$ 1.000 a R$ 2.000','De R$ 2.000 a R$ 3.000','De R$ 3.000 a R$ 5.000','De R$ 5.000 a R$ 8.000','Acima de R$ 8.000'] },
+  q8:      { entry: '881180926',  type: 'radio',    opts: ['Pagaria Ã  vista, do prÃ³prio bolso','Pagaria parcelado (6-12x), do prÃ³prio bolso','Buscaria apoio/custeio da empresa onde trabalho','NÃ£o viabilizaria nesse valor hoje'] },
+  q9:      { entry: '1042843731', type: 'radio',    opts: ['Sim','Talvez','NÃ£o'] },
+  q10:     { entry: '1904010881', type: 'text' },
+  q11whats:{ entry: '457853281',  type: 'text' },
+  q11scale:{ entry: '1270919076', type: 'scale',    opts: ['0','1','2','3','4','5','6','7','8','9','10'] },
+  q12:     { entry: '477846170',  type: 'checkbox', hasOther: true, max: 3, opts: ['IA aplicada ao Marketing e ComunicaÃ§Ã£o','AutomaÃ§Ã£o de processos','Planejamento estratÃ©gico e Growth','AnÃ¡lise de dados e indicadores','Posicionamento profissional e empregabilidade','Como comprovar resultados atravÃ©s de mÃ©tricas'] },
+  q13:     { entry: '1655649147', type: 'textarea' }
+};
+
+/* âââââââââââââââââââââââââââââââââââââââââ
+   BUILD UI
+   âââââââââââââââââââââââââââââââââââââââââ */
+function buildUI() {
+  // Radio / Checkbox options
+  ['q1','q2','q3','q4','q6','q7','q8','q9','q12'].forEach(id => {
+    const f = FIELDS[id];
+    const container = document.getElementById(id);
+    if (!container) return;
+
+    f.opts.forEach(opt => {
+      const label = document.createElement('label');
+      label.className = 'opt';
+      const inp = document.createElement('input');
+      inp.type = f.type === 'checkbox' ? 'checkbox' : 'radio';
+      inp.name = id;
+      inp.value = opt;
+      if (f.type === 'checkbox') inp.addEventListener('change', () => enforceMax(id, f.max || 99));
+      inp.addEventListener('change', () => refreshSelected(id, f.type));
+      label.appendChild(inp);
+      const span = document.createElement('span');
+      span.className = 'opt-text';
+      span.textContent = opt;
+      label.appendChild(span);
+      container.appendChild(label);
+    });
+
+    // "Outro" option
+    if (f.hasOther) {
+      const label = document.createElement('label');
+      label.className = 'opt';
+      const inp = document.createElement('input');
+      inp.type = f.type === 'checkbox' ? 'checkbox' : 'radio';
+      inp.name = id;
+      inp.value = '__other_option_response__';
+      inp.id = `${id}_other_chk`;
+      if (f.type === 'checkbox') inp.addEventListener('change', () => enforceMax(id, f.max || 99));
+      inp.addEventListener('change', () => {
+        refreshSelected(id, f.type);
+        const wrap = document.getElementById(`${id}_outro_wrap`);
+        if (wrap) wrap.classList.toggle('visible', inp.checked);
+        if (inp.checked) setTimeout(() => document.getElementById(`${id}_outro_txt`).focus(), 50);
+      });
+      label.appendChild(inp);
+      const span = document.createElement('span');
+      span.className = 'opt-text';
+      span.textContent = 'Outro';
+      label.appendChild(span);
+      container.appendChild(label);
+
+      // Text field for "Outro"
+      const wrap = document.createElement('div');
+      wrap.className = 'outro-wrap';
+      wrap.id = `${id}_outro_wrap`;
+      const txt = document.createElement('input');
+      txt.type = 'text';
+      txt.className = 'outro-input';
+      txt.id = `${id}_outro_txt`;
+      txt.placeholder = 'Digite sua resposta...';
+      wrap.appendChild(txt);
+      container.appendChild(wrap);
+    }
+  });
+
+  // Scale
+  const sc = document.getElementById('q11scale');
+  FIELDS.q11scale.opts.forEach(v => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'scale-btn';
+    btn.textContent = v;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#q11scale .scale-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+    sc.appendChild(btn);
+  });
+}
+
+function enforceMax(id, max) {
+  const boxes = [...document.querySelectorAll(`#${id} input[type=checkbox]`)];
+  const checked = boxes.filter(b => b.checked);
+  if (checked.length > max) {
+    checked[checked.length - 1].checked = false;
+  }
+  refreshSelected(id, 'checkbox');
+}
+
+function refreshSelected(id, type) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  container.querySelectorAll('.opt').forEach(label => {
+    const inp = label.querySelector('input');
+    label.classList.toggle('selected', inp.checked);
+  });
+}
+
+/* âââââââââââââââââââââââââââââââââââââââââ
+   NAVIGATION
+   âââââââââââââââââââââââââââââââââââââââââ */
+const STEP_NAMES = ['', 'Perfil profissional', 'CenÃ¡rio', 'Contato & IA'];
+let currentStep = 1;
+
+function goStep(n) {
+  document.getElementById(`step${currentStep}`).classList.remove('active');
+  currentStep = n;
+  document.getElementById(`step${currentStep}`).classList.add('active');
+  const pct = Math.round((n / 3) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('stepLabel').textContent = `Etapa ${n} de 3 â ${STEP_NAMES[n]}`;
+  document.getElementById('stepPct').textContent = pct + '%';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* âââââââââââââââââââââââââââââââââââââââââ
+   SUBMIT
+   âââââââââââââââââââââââââââââââââââââââââ */
+let formSubmitted = false;
+
+function onIframeLoad() {
+  if (!formSubmitted) return;
+  // Hide steps and progress, show success
+  document.querySelectorAll('.step').forEach(s => s.style.display = 'none');
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('success').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function getRadio(id) {
+  const el = document.querySelector(`input[name="${id}"]:checked`);
+  return el ? el.value : '';
+}
+
+function getRadioOther(id) {
+  // Returns the typed text if "Outro" was selected, otherwise null
+  const chk = document.getElementById(`${id}_other_chk`);
+  if (chk && chk.checked) {
+    return (document.getElementById(`${id}_outro_txt`) || {}).value || '';
+  }
+  return null; // null = Outro not selected
+}
+
+function getCheckboxes(id) {
+  return [...document.querySelectorAll(`#${id} input[type=checkbox]:checked`)].map(c => c.value);
+}
+
+function getCheckboxOther(id) {
+  const chk = document.getElementById(`${id}_other_chk`);
+  if (chk && chk.checked) {
+    return (document.getElementById(`${id}_outro_txt`) || {}).value || '';
+  }
+  return null;
+}
+
+function getScale() {
+  const sel = document.querySelector('#q11scale .scale-btn.selected');
+  return sel ? sel.textContent.trim() : '';
+}
+
+function addHidden(form, name, value) {
+  const inp = document.createElement('input');
+  inp.type = 'hidden';
+  inp.name = name;
+  inp.value = value;
+  form.appendChild(inp);
+}
+
+function submitForm() {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = FORM_ACTION;
+  form.target = 'hidden_iframe';
+  form.style.display = 'none';
+
+  // Helper: add radio field, handling "Outro"
+  function addRadio(entryId, qid) {
+    const val = getRadio(qid);
+    addHidden(form, `entry.${entryId}`, val);
+    const otherText = getRadioOther(qid);
+    if (otherText !== null) addHidden(form, `entry.${entryId}.other_option_response`, otherText);
+  }
+
+  // Helper: add checkbox fields, handling "Outro"
+  function addCheckboxes(entryId, qid) {
+    getCheckboxes(qid).forEach(v => addHidden(form, `entry.${entryId}`, v));
+    const otherText = getCheckboxOther(qid);
+    if (otherText !== null) addHidden(form, `entry.${entryId}.other_option_response`, otherText);
+  }
+
+  // Radio fields (with Outro support where applicable)
+  addRadio('845061479',  'q1');
+  addRadio('1041239608', 'q2');
+  addRadio('1625959461', 'q3');
+  addHidden(form, 'entry.1499212288', document.getElementById('q5').value);
+  addHidden(form, 'entry.933712324',  getRadio('q6'));
+  addHidden(form, 'entry.343762714',  getRadio('q7'));
+  addHidden(form, 'entry.881180926',  getRadio('q8'));
+  addHidden(form, 'entry.1042843731', getRadio('q9'));
+  addHidden(form, 'entry.1904010881', document.getElementById('q10').value);
+  addHidden(form, 'entry.457853281',  document.getElementById('q11whats').value);
+  addHidden(form, 'entry.1270919076', getScale());
+  addHidden(form, 'entry.1655649147', document.getElementById('q13').value);
+
+  // Checkbox fields (with Outro support where applicable)
+  addCheckboxes('499116240',  'q4');
+  addCheckboxes('477846170',  'q12');
+
+  document.body.appendChild(form);
+  formSubmitted = true;
+  form.submit();
+  document.body.removeChild(form);
+}
+
+// Init
+buildUI();
+</script>
+</body>
+</html>
