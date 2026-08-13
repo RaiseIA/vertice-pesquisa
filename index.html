@@ -646,6 +646,10 @@ function submitForm() {
   addCheckboxes('499116240',  'q4');
   addCheckboxes('477846170',  'q12');
 
+  // Parâmetros obrigatórios para formulários multi-página do Google Forms
+  params.append('fvv', '1');
+  params.append('pageHistory', '0,1,2');
+
   // Envio via fetch no-cors (confiável com Google Forms)
   fetch(FORM_ACTION, {
     method: 'POST',
